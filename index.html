@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoMarket – Supermercado Automático</title>
+<style>
+:root{--navy:#0f2447;--teal:#0e9fb5;--ice:#bfeaf2;--bg:#eef9fb;--green:#22c55e;--ink:#10243e;--mut:#6b7c93}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--navy);color:var(--ink);display:flex;justify-content:center}
+#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;padding-bottom:76px}
+.screen{display:none}.screen.on{display:block}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+h2{font-size:16px;color:var(--teal);margin:18px 0 8px}
+/* início */
+.top{background:linear-gradient(var(--ice),var(--bg));padding:18px 16px 4px;display:flex;align-items:center;justify-content:space-between}
+.top h1{font-size:26px;color:var(--navy);font-weight:800}
+.av{width:38px;height:38px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700}
+.sb{padding:8px 16px 0}
+.sb input{width:100%;padding:12px 16px;border-radius:24px;border:1px solid #a9dce5;font-size:15px;background:#fff}
+.pad{padding:0 16px 16px}
+.row,.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pc{background:#fff;border-radius:14px;padding:10px 6px 4px;text-align:center;box-shadow:0 1px 4px #0e9fb533}
+.em{font-size:38px;line-height:1.2}
+.nm{font-size:12px;min-height:32px;display:flex;align-items:center;justify-content:center}
+.pr{display:inline-block;background:var(--green);color:#fff;font-weight:700;font-size:12px;padding:2px 8px;border-radius:6px;margin:4px 0}
+.pc button{display:block;width:100%;border:0;background:none;color:var(--teal);font-weight:600;font-size:12px;padding:8px 0}
+.cat{background:var(--ice);border:2px solid transparent;border-radius:14px;padding:12px 4px;font-size:12px;color:var(--navy);font-weight:600;text-align:center}
+.cat span{display:block;font-size:28px}
+.cat.on{border-color:var(--teal);background:#fff}
+.li{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 4px #0e9fb533}
+.li .em{font-size:30px}
+.in{flex:1;min-width:0}.in b{display:block;font-size:14px}.in small{color:var(--mut);font-size:12px}
+.pv{color:var(--teal);font-size:14px}
+.ad{width:34px;height:34px;border-radius:50%;border:0;background:var(--teal);color:#fff;font-size:20px;line-height:1}
+.empty{text-align:center;color:var(--mut);padding:28px 12px;font-size:14px}
+/* carrinho */
+.chead{background:linear-gradient(135deg,#0e9fb5,#0b7d92);color:#fff;text-align:center;padding:22px 16px 18px;border-radius:0 0 22px 22px}
+.chead h1{font-size:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:#d9f3f7;color:#0b7d92;font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.qt{display:flex;align-items:center;gap:8px}
+.qt button{width:28px;height:28px;border-radius:50%;border:1px solid var(--teal);background:#fff;color:var(--teal);font-size:16px;line-height:1}
+.scan{width:100%;border:2px dashed var(--teal);background:#fff;color:var(--teal);font-weight:700;padding:12px;border-radius:14px;margin:4px 0 12px}
+.sum{background:var(--ice);border-radius:18px;padding:14px 16px;margin-top:8px}
+.sum .t{display:flex;justify-content:space-between;align-items:center}
+.sum .t span{font-size:13px;color:var(--navy)}.sum .t b{font-size:26px;color:#0b7d92}
+.cta{display:block;width:100%;border:0;background:var(--green);color:#fff;font-weight:800;font-size:16px;padding:14px;border-radius:26px;margin-top:12px}
+.cta:disabled{background:#9db3a6;cursor:not-allowed}
+.ghost{display:block;width:100%;border:0;background:none;color:var(--mut);font-size:14px;padding:12px;text-decoration:underline}
+/* concluída */
+.ok{text-align:center;padding:34px 20px 20px}
+.chk{width:92px;height:92px;border-radius:50%;background:var(--green);color:#fff;font-size:52px;display:grid;place-items:center;margin:0 auto 14px;box-shadow:0 0 0 12px #22c55e33}
+.ok h1{color:#0b7d92;font-size:24px}
+.rc{background:#fff;border-radius:14px;padding:14px 16px;margin:18px 0 12px;text-align:left;box-shadow:0 1px 6px #0e9fb533;font-size:14px}
+.rc div{display:flex;justify-content:space-between;padding:4px 0}
+.rc .tt{border-top:1px solid #dde8ee;margin-top:6px;padding-top:8px;font-weight:800}
+.paid{font-size:13px;color:var(--mut)}
+/* conta / cartão */
+.acc{padding:24px 16px}
+.acc h1{color:var(--navy);font-size:22px;margin-bottom:12px}
+.box{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;font-size:14px}
+.box small{display:block;color:var(--mut)}
+.sec{background:#fff;border:1px solid var(--teal);color:var(--teal);font-weight:700;border-radius:24px;padding:12px;width:100%;margin-top:8px}
+.auth{min-height:100vh;background:linear-gradient(160deg,#0f2447,#0b6477);padding:28px 18px;color:#fff}
+.auth h1{font-size:32px;margin-bottom:4px}.auth p{color:#bfe6ee;font-size:14px;margin-bottom:16px}
+.fc{background:#fff;color:var(--ink);border-radius:18px;padding:18px}
+.fc label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+.fc input{width:100%;padding:12px;border:1px solid #c5d6de;border-radius:10px;font-size:16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn{background:#fff6d6;color:#6b5200;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:12px}
+.steps{list-style:none;padding:0;margin:0 0 16px;font-size:14px;color:#d8f1f6}
+.steps li{padding:3px 0}
+.err{color:#c62828;font-size:13px;min-height:18px;margin-top:6px}
+/* nav + toast */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #d3e6ec;display:none;padding:6px 0 max(6px,env(safe-area-inset-bottom))}
+#nav button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;padding:6px 0;position:relative}
+#nav button span{display:block;font-size:22px}
+#nav button.on{color:var(--teal);font-weight:700}
+#bdg{position:absolute;top:0;left:55%;background:var(--green);color:#fff;font-size:11px;border-radius:10px;padding:1px 6px;display:none}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}#toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- Criar conta -->
+<section id="auth" class="screen on auth">
+  <h1>AutoMarket</h1>
+  <p>O supermercado sem fila e sem caixa.</p>
+  <ol class="steps">
+    <li>1. Crie sua conta e vincule o cartão.</li>
+    <li>2. Pegue os produtos: eles entram no carrinho virtual.</li>
+    <li>3. Saia do mercado: o pagamento é automático.</li>
+  </ol>
+  <form class="fc" id="fAuth" autocomplete="off">
+    <div class="warn">Projeto escolar. Não use dados reais.</div>
+    <label for="nome">Nome</label><input id="nome" required>
+    <label for="mail">E-mail</label><input id="mail" type="email" required>
+    <label for="pass">Senha</label><input id="pass" type="password" minlength="6" required>
+    <button class="cta" type="submit">Criar conta</button>
+  </form>
+</section>
+
+<!-- Vincular cartão -->
+<section id="card" class="screen auth">
+  <h1>Vincular cartão</h1>
+  <p>As compras serão cobradas aqui ao sair do mercado.</p>
+  <form class="fc" id="fCard" autocomplete="off">
+    <div class="warn">Simulação: use um número de teste (ex.: 4111 1111 1111 1111). Só os 4 últimos dígitos ficam salvos neste aparelho.</div>
+    <label for="num">Número do cartão</label><input id="num" inputmode="numeric" placeholder="0000 0000 0000 0000" required>
+    <label for="cn">Nome no cartão</label><input id="cn" required>
+    <div class="two">
+      <div><label for="val">Validade</label><input id="val" inputmode="numeric" placeholder="MM/AA" required></div>
+      <div><label for="cvv">CVV</label><input id="cvv" inputmode="numeric" maxlength="4" type="password" required></div>
+    </div>
+    <div class="err" id="cerr" role="alert"></div>
+    <button class="cta" type="submit">Vincular cartão</button>
+    <button class="ghost" type="button" onclick="skipCard()">Explorar sem cartão</button>
+  </form>
+</section>
+
+<!-- Início -->
+<section id="home" class="screen">
+  <div class="top"><h1>AutoMarket</h1><div class="av" id="av">A</div></div>
+  <div class="sb"><input id="q" type="search" placeholder="Explore produtos..." aria-label="Buscar produtos"></div>
+  <div class="pad">
+    <h2>Ofertas do dia</h2><div class="row" id="ofe"></div>
+    <h2>Categorias</h2><div class="cats" id="cats"></div>
+    <h2 id="lt">Produtos no mercado</h2><div id="list"></div>
+  </div>
+</section>
+
+<!-- Carrinho -->
+<section id="cart" class="screen">
+  <div class="chead"><h1>Carrinho de compras inteligente</h1><div class="pill"><i class="dot"></i>Carrinho virtual ativo</div></div>
+  <div class="pad" style="padding-top:14px">
+    <button class="scan" onclick="scan()">📡 Simular escaneamento de produto</button>
+    <div id="items"></div>
+    <div class="sum"><div class="t"><span>Total estimado:<br><small id="cnt">0 itens</small></span><b id="tot">R$ 0,00</b></div>
+    <button class="cta" id="fin" onclick="checkout()">Finalizar e sair</button></div>
+  </div>
+</section>
+
+<!-- Compra concluída -->
+<section id="done" class="screen">
+  <div class="ok">
+    <div class="chk">✓</div><h1>Compra concluída sem fila</h1>
+    <div class="rc" id="rc"></div>
+    <p class="paid" id="paid"></p>
+    <button class="cta" onclick="go('home')">Nova compra</button>
+  </div>
+</section>
+
+<!-- Conta -->
+<section id="acct" class="screen">
+  <div class="acc"><h1>Minha conta</h1>
+    <div class="box"><b id="an"></b><small id="ae"></small></div>
+    <div class="box"><b>Cartão para pagamento automático</b><small id="ac"></small></div>
+    <button class="sec" onclick="S.after='acct';go('card')">Trocar cartão</button>
+    <button class="sec" onclick="rmCard()">Remover cartão</button>
+    <button class="ghost" onclick="logout()">Sair da conta</button>
+  </div>
+</section>
+
+<nav id="nav">
+  <button data-go="home" onclick="go('home')"><span>🏠</span>Início</button>
+  <button data-go="cart" onclick="go('cart')"><span>🛒</span>Carrinho<b id="bdg">0</b></button>
+  <button data-go="acct" onclick="go('acct')"><span>👤</span>Conta</button>
+</nav>
+<div id="toast" role="status"></div>
+</div>
+
+<script>
+const P=[
+{id:1,n:"Bananas Prata (1kg)",p:3.99,e:"🍌",c:"Frutas & Verduras",o:1},
+{id:2,n:"Leite Integral (1L)",p:4.50,e:"🥛",c:"Laticínios",o:1},
+{id:3,n:"Pão Artesanal",p:7.99,e:"🍞",c:"Padaria",o:1},
+{id:4,n:"Suco de Laranja (500ml)",p:5.50,e:"🧃",c:"Bebidas"},
+{id:5,n:"Maçã Fuji (1kg)",p:6.49,e:"🍎",c:"Frutas & Verduras"},
+{id:6,n:"Tomate (1kg)",p:5.99,e:"🍅",c:"Frutas & Verduras"},
+{id:7,n:"Queijo Mussarela (200g)",p:9.90,e:"🧀",c:"Laticínios"},
+{id:8,n:"Iogurte Natural (170g)",p:2.79,e:"🥣",c:"Laticínios"},
+{id:9,n:"Croissant",p:4.50,e:"🥐",c:"Padaria"},
+{id:10,n:"Caldinho de Feijão",p:5.90,e:"🍲",c:"Caldinho"},
+{id:11,n:"Caldinho de Mandioca",p:6.50,e:"🥣",c:"Caldinho"},
+{id:12,n:"Água Mineral (1,5L)",p:3.20,e:"💧",c:"Bebidas"},
+{id:13,n:"Refrigerante (2L)",p:8.90,e:"🥤",c:"Bebidas"}
+];
+const C=[["Frutas & Verduras","🥬"],["Laticínios","🥛"],["Padaria","🥐"],["Caldinho","🍲"],["Bebidas","🥤"]];
+const $=s=>document.querySelector(s);
+const R=v=>"R$ "+v.toFixed(2).replace(".",",");
+const S={user:null,card:null,cart:{},cat:"",after:null,last:null};
+try{const s=JSON.parse(localStorage.getItem("automarket")||"null");if(s){S.user=s.user;S.card=s.card}}catch(e){}
+function save(){try{localStorage.setItem("automarket",JSON.stringify({user:S.user,card:S.card}))}catch(e){}}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),1800)}
+const count=()=>Object.values(S.cart).reduce((a,b)=>a+b,0);
+const total=()=>Object.entries(S.cart).reduce((a,[id,q])=>a+P.find(x=>x.id==id).p*q,0);
+function badge(){const n=count(),b=$("#bdg");b.textContent=n;b.style.display=n?"block":"none"}
+
+function go(id){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("on",x.id===id));
+  $("#nav").style.display=["home","cart","acct"].includes(id)?"flex":"none";
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.go===id));
+  window.scrollTo(0,0);
+  if(id==="home")renderHome();if(id==="cart")renderCart();if(id==="acct")renderAcct();
+}
+
+/* Conta e cartão */
+$("#fAuth").onsubmit=e=>{e.preventDefault();
+  S.user={nome:$("#nome").value.trim(),email:$("#mail").value.trim()};
+  $("#pass").value="";save();S.after="home";go("card")};
+$("#num").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,19).replace(/(.{4})/g,"$1 ").trim()};
+$("#val").oninput=e=>{let v=e.target.value.replace(/\D/g,"").slice(0,4);if(v.length>2)v=v.slice(0,2)+"/"+v.slice(2);e.target.value=v};
+$("#fCard").onsubmit=e=>{e.preventDefault();
+  const n=$("#num").value.replace(/\D/g,""),m=+$("#val").value.slice(0,2),cv=$("#cvv").value;
+  const err=x=>{$("#cerr").textContent=x};
+  if(n.length<13)return err("Digite o número completo do cartão.");
+  if(!/^\d\d\/\d\d$/.test($("#val").value)||m<1||m>12)return err("Use a validade no formato MM/AA.");
+  if(!/^\d{3,4}$/.test(cv))return err("O CVV tem 3 ou 4 números.");
+  err("");
+  S.card={last4:n.slice(-4),brand:n[0]==="4"?"Visa":n[0]==="5"?"Mastercard":"Cartão"};
+  e.target.reset();save();toast("Cartão vinculado ✓");
+  const nx=S.after||"home";S.after=null;go(nx)};
+function skipCard(){$("#cerr").textContent="";S.after=null;go("home")}
+function rmCard(){S.card=null;save();renderAcct();toast("Cartão removido")}
+function logout(){S.user=null;S.card=null;S.cart={};save();badge();go("auth")}
+function cardTxt(){return S.card?S.card.brand+" •••• "+S.card.last4:"Nenhum cartão vinculado"}
+function renderAcct(){$("#an").textContent=S.user.nome;$("#ae").textContent=S.user.email;$("#ac").textContent=cardTxt()}
+
+/* Início */
+function renderHome(){
+  $("#av").textContent=(S.user.nome[0]||"A").toUpperCase();
+  $("#ofe").innerHTML=P.filter(p=>p.o).map(p=>`<div class="pc"><div class="em">${p.e}</div><div class="nm">${p.n}</div><span class="pr">${R(p.p)}</span><button onclick="add(${p.id})">🛒 Adicionar</button></div>`).join("");
+  $("#cats").innerHTML=C.map(([n,i])=>`<button class="cat${S.cat===n?" on":""}" onclick="setCat('${n}')"><span>${i}</span>${n}</button>`).join("");
+  renderList();
+}
+function setCat(n){S.cat=S.cat===n?"":n;renderHome()}
+$("#q").oninput=renderList;
+function renderList(){
+  const q=$("#q").value.toLowerCase().trim();
+  const l=P.filter(p=>(!S.cat||p.c===S.cat)&&(!q||p.n.toLowerCase().includes(q)));
+  $("#lt").textContent=S.cat||"Produtos no mercado";
+  $("#list").innerHTML=l.length?l.map(p=>`<div class="li"><div class="em">${p.e}</div><div class="in"><b>${p.n}</b><small>${p.c}</small></div><b class="pv">${R(p.p)}</b><button class="ad" aria-label="Adicionar ${p.n}" onclick="add(${p.id})">+</button></div>`).join(""):`<p class="empty">Nenhum produto encontrado.</p>`;
+}
+
+/* Carrinho */
+function add(id){S.cart[id]=(S.cart[id]||0)+1;badge();toast(P.find(p=>p.id===id).e+" "+P.find(p=>p.id===id).n+" no carrinho")}
+function scan(){const p=P[Math.floor(Math.random()*P.length)];S.cart[p.id]=(S.cart[p.id]||0)+1;badge();renderCart();toast("📡 Escaneado: "+p.n)}
+function chg(id,d){S.cart[id]+=d;if(S.cart[id]<=0)delete S.cart[id];badge();renderCart()}
+function renderCart(){
+  const ids=Object.keys(S.cart);
+  $("#items").innerHTML=ids.length?ids.map(id=>{const p=P.find(x=>x.id==id),q=S.cart[id];
+    return `<div class="li"><div class="em">${p.e}</div><div class="in"><b>${p.n}</b><b class="pv">${R(p.p*q)}</b></div><div class="qt"><button aria-label="Diminuir" onclick="chg(${id},-1)">−</button><b>${q}</b><button aria-label="Aumentar" onclick="chg(${id},1)">+</button></div></div>`}).join("")
+    :`<p class="empty">Seu carrinho virtual está vazio.<br>Pegue um produto na prateleira ou use o botão de escaneamento acima.</p>`;
+  const n=count();$("#cnt").textContent=n+(n===1?" item":" itens");$("#tot").textContent=R(total());$("#fin").disabled=!n;
+}
+function checkout(){
+  if(!S.card){toast("Vincule um cartão para o pagamento automático");S.after="cart";return go("card")}
+  const items=Object.entries(S.cart).map(([id,q])=>({...P.find(x=>x.id==id),q}));
+  S.last={items,total:total(),when:new Date().toLocaleString("pt-BR"),card:cardTxt()};
+  S.cart={};badge();
+  $("#rc").innerHTML=items.map(i=>`<div><span>${i.q}× ${i.n}</span><span>${R(i.p*i.q)}</span></div>`).join("")+`<div class="tt"><span>Total</span><span>${R(S.last.total)}</span></div>`;
+  $("#paid").textContent="Pagamento confirmado automaticamente no "+S.last.card+" · "+S.last.when;
+  go("done");
+}
+
+/* Início do app */
+badge();
+if(S.user)go("home");
+</script>
+</body>
+</html>
