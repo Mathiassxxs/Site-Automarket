@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f2447">
+<title>AutoMarket – Supermercado sem fila (demonstração)</title>
+<style>
+/* ===== Design tokens ===== */
+:root{
+  --navy:#0f2447;--navy-2:#173468;--teal:#0e9fb5;--teal-d:#0a7c8f;--ice:#bfeaf2;--bg:#eef9fb;--green:#22c55e;--green-l:#4ade80;
+  --ink:#10243e;--mut:#4d6178;--line:#d5e6ec;--surf:#fff;
+  --bad:#b3261e;--bad-bg:#fdecea;--ok:#14773a;--ok-bg:#dcf7e6;--warn:#7a5200;--warn-bg:#fff4cc;
+  --r1:8px;--r2:12px;--r3:16px;--r4:24px;
+  --sh1:0 1px 2px rgba(15,36,71,.06),0 1px 3px rgba(15,36,71,.08);--sh2:0 8px 20px rgba(15,36,71,.10);--sh3:0 20px 48px rgba(15,36,71,.18);
+  --font:"Inter","Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;--gmin:152px;
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{font:400 16px/1.5 var(--font);background:var(--bg);color:var(--ink);padding-bottom:72px;-webkit-font-smoothing:antialiased}
+body.noav{padding-bottom:0}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.skip{position:absolute;left:8px;top:-60px;background:#fff;padding:8px 12px;border-radius:var(--r1);z-index:99}.skip:focus{top:8px}
+.vh{position:absolute;left:-999px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.15;color:var(--navy);letter-spacing:-.02em}
+i[data-ic],.ic{display:inline-flex;flex:none}.ic{vertical-align:middle}
+.sec-h{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:40px 0 16px}
+.sec-h h2{font-size:clamp(22px,3vw,28px);font-weight:800}.sec-h p{color:var(--mut);font-size:14px;margin-top:2px}
+section[id],#ctg,#offsec{scroll-margin-top:150px}
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid transparent;border-radius:var(--r2);padding:0 20px;min-height:48px;font-weight:700;transition:transform .15s,background .2s,box-shadow .2s,border-color .2s;position:relative}
+.btn:active{transform:scale(.98)}
+.pri{background:var(--green);color:var(--navy)}.pri:hover{background:var(--green-l)}
+.sec{background:#fff;border-color:var(--line);color:var(--teal-d)}.sec:hover{border-color:var(--teal);background:var(--bg)}
+.dk{background:var(--navy);color:#fff}.dk:hover{background:var(--teal-d)}
+.ghost{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);color:#fff}.ghost:hover{background:rgba(255,255,255,.2)}
+.block{width:100%}
+.danger{color:var(--bad)}.danger:hover{border-color:var(--bad);background:var(--bad-bg)}
+.btn:disabled{background:#dfe8e4;color:#6b7a73;border-color:transparent;cursor:not-allowed;transform:none}
+.btn.ld{color:transparent!important;pointer-events:none}
+.btn.ld::after{content:"";position:absolute;width:20px;height:20px;border:3px solid var(--navy);border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+.dk.ld::after{border-color:#fff;border-right-color:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lk{background:none;border:0;color:var(--teal-d);font-weight:700;padding:8px 4px;min-height:40px;text-decoration:underline;text-underline-offset:3px}
+/* logo */
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:24px;letter-spacing:-.03em;color:#fff;background:none;border:0;padding:0}
+.lm{width:40px;height:40px;border-radius:var(--r2);background:var(--teal);display:grid;place-items:center;color:#fff;position:relative}
+.lm::after{content:"";position:absolute;right:-3px;top:-3px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--navy)}
+.logo em{font-style:normal;color:var(--ice);font-weight:600}
+/* cabeçalho */
+.hd{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff}
+.top{background:#0a1a36;font-size:12px;color:#b9cde0}.top .wrap{display:flex;justify-content:space-between;gap:12px;padding-top:6px;padding-bottom:6px}
+.mh{display:grid;grid-template-columns:auto 1fr auto;gap:14px 32px;align-items:center;padding-top:14px;padding-bottom:14px}
+.sbx{position:relative;max-width:760px;width:100%;justify-self:center}
+.sb{display:flex;align-items:center;background:#fff;border-radius:var(--r2);padding:4px;color:var(--ink);box-shadow:var(--sh1)}
+.sb:focus-within{outline:3px solid var(--ice)}
+.sb>i{margin:0 8px 0 12px;color:var(--mut)}
+.sb input{flex:1;border:0;outline:0;min-height:44px;min-width:0;background:none;font-size:16px}
+.sb .lk{text-decoration:none;color:var(--mut);font-size:13px}
+.sb .btn{min-height:44px;padding:0 18px;background:var(--teal);color:#fff;border-radius:var(--r1)}.sb .btn:hover{background:var(--teal-d)}
+.sg{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;color:var(--ink);border-radius:var(--r2);box-shadow:var(--sh3);list-style:none;padding:6px;z-index:10}
+.sg button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:10px 12px;border-radius:var(--r1);min-height:44px}.sg button:hover{background:var(--bg)}
+.hc{display:flex;gap:6px}
+.hb{display:flex;align-items:center;gap:10px;background:none;border:0;color:#fff;padding:6px 12px;border-radius:var(--r2);text-align:left;line-height:1.2}
+.hb:hover,.hb.on{background:rgba(255,255,255,.12)}
+.hb small{display:block;color:#b9cde0;font-size:12px}.hb b{font-size:14px}
+.cartb{position:relative}
+.bdg{position:absolute;top:0;left:30px;background:var(--green);color:var(--navy);font-size:11px;font-weight:800;border-radius:10px;padding:0 6px;min-width:20px;text-align:center;line-height:20px}
+.bdg.bump{animation:bump .4s}@keyframes bump{40%{transform:scale(1.5)}}
+.cn{background:#fff;border-bottom:1px solid var(--line);color:var(--ink)}
+.cn .wrap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.cl{flex:none;display:flex;align-items:center;gap:8px;background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px;font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap}
+.cl:hover{color:var(--teal-d)}.cl[aria-pressed=true]{color:var(--teal-d);border-color:var(--teal);font-weight:700}
+.cl:first-child{font-weight:700;color:var(--navy)}
+#nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--line);padding:4px 0 max(4px,env(safe-area-inset-bottom));z-index:30}
+#nav button{flex:1;border:0;background:none;color:var(--mut);padding:6px 0;font-size:12px;font-weight:600;position:relative;min-height:54px;display:grid;justify-items:center;gap:2px}
+#nav button.on{color:var(--teal-d);font-weight:800}
+#nav .bdg{left:calc(50% + 6px);top:2px}
+@media(max-width:799px){.top,.hc,.cn .wrap::after{display:none}.mh{grid-template-columns:1fr;gap:12px;padding-top:12px;padding-bottom:12px}.logo{font-size:20px}.lm{width:34px;height:34px}.sb .btn span{display:none}}
+@media(min-width:800px){#nav{display:none!important}body{padding-bottom:0}}
+/* herói */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:center;background:var(--navy);color:#fff;border-radius:var(--r4);padding:clamp(24px,5vw,56px);margin-top:24px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;right:-120px;top:-140px;width:520px;height:520px;border-radius:50%;background:var(--teal);opacity:.22}
+.hero>*{position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--ice)}
+.hero h1{color:#fff;font-size:clamp(34px,5.4vw,60px);font-weight:800;margin:16px 0 14px;line-height:1.04}
+.hero h1 span{color:var(--green)}
+.hero p{color:#cfe4ef;font-size:clamp(16px,1.6vw,19px);max-width:48ch}
+.hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.hero .btn{min-height:54px;padding:0 26px}
+.hv{position:relative;min-height:340px}
+.ht{position:absolute;width:min(46%,210px);background:#fff;color:var(--ink);border-radius:var(--r3);padding:10px 10px 12px;box-shadow:var(--sh3)}
+.ht .art{aspect-ratio:1;border-radius:var(--r2)}.ht b{display:block;font-size:12px;color:var(--teal-d);margin-top:6px}.ht span.n{font-size:13px;font-weight:600;display:block;line-height:1.2}.ht strong{font-size:18px;color:var(--navy)}
+.ht .tag{top:16px;left:16px}
+.t0{left:2%;top:20px;transform:rotate(-6deg)}.t1{right:2%;top:0;transform:rotate(5deg)}.t2{left:28%;bottom:0;transform:rotate(-1deg);z-index:2}
+.beam{position:absolute;top:0;bottom:0;width:3px;background:var(--green);box-shadow:0 0 18px 3px rgba(34,197,94,.6);z-index:3;animation:sweep 3.6s ease-in-out infinite alternate;border-radius:3px}
+@keyframes sweep{from{left:4%}to{left:96%}}
+@media(max-width:899px){.hero{grid-template-columns:1fr}.hv{min-height:280px}}
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.tr{display:flex;gap:14px;align-items:flex-start;background:#fff;border-radius:var(--r3);padding:18px;box-shadow:var(--sh1)}
+.tr>i{width:44px;height:44px;border-radius:var(--r2);background:var(--ice);color:var(--navy);align-items:center;justify-content:center}
+.tr b{display:block;color:var(--navy)}.tr span{font-size:14px;color:var(--mut)}
+@media(max-width:799px){.trust{grid-template-columns:1fr}}
+/* categorias */
+.ctg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.ct{display:grid;justify-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:var(--r3);padding:20px 10px;text-align:center;transition:transform .2s,box-shadow .2s,border-color .2s}
+.ct:hover{transform:translateY(-3px);box-shadow:var(--sh2);border-color:var(--teal)}
+.ct .ci2{width:64px;height:64px;border-radius:50%;background:hsl(var(--h) 65% 92%);color:hsl(var(--h) 60% 24%);display:grid;place-items:center;margin-bottom:6px}
+.ct b{color:var(--navy);font-size:15px}.ct small{color:var(--mut);font-size:13px}
+/* catálogo */
+.crumb{font-size:13px;color:var(--mut);margin:24px 0 4px}
+.rt{font-size:clamp(26px,3.4vw,34px);font-weight:800}
+.tb{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:#fff;border-radius:var(--r3);padding:14px;margin:16px 0 8px;box-shadow:var(--sh1)}
+.tb label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.tb select{width:100%;padding:0 12px;min-height:46px;border:1.5px solid var(--line);border-radius:var(--r2);background:#fff}
+.tb select:hover{border-color:var(--teal)}
+@media(max-width:700px){.tb{grid-template-columns:1fr}}
+.ch{flex:none;border:1.5px solid var(--teal);background:#fff;color:var(--teal-d);border-radius:99px;padding:4px 12px;font-weight:600;font-size:13px;min-height:34px;display:inline-flex;align-items:center;gap:6px}
+.ch:hover{background:var(--bg)}
+.rec,.act{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--mut);margin:8px 0}
+.rec .ch{border-color:var(--line)}
+.cnt{font-weight:600;color:var(--navy);margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--gmin),1fr));gap:14px}
+@media(min-width:700px){:root{--gmin:200px}.grid{gap:18px}}
+.pc{background:#fff;border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;display:flex;flex-direction:column;position:relative;transition:box-shadow .2s,transform .2s,border-color .2s}
+.pc:hover,.pc:focus-within{box-shadow:var(--sh2);transform:translateY(-3px);border-color:var(--teal)}
+.ph{position:relative;aspect-ratio:1;padding:12px;background:#fff}
+.art{width:100%;height:100%;display:block}
+.art img{width:100%;height:100%;object-fit:contain}
+.tag{position:absolute;top:10px;left:10px;background:var(--green);color:var(--navy);font-weight:800;font-size:12px;padding:3px 9px;border-radius:99px;z-index:1}
+.inc{position:absolute;top:10px;right:10px;background:var(--navy);color:#fff;font-weight:600;font-size:12px;padding:3px 9px;border-radius:99px;z-index:1}
+.fb{width:100%;height:100%;border-radius:var(--r2);background:hsl(var(--h) 60% 95%);display:grid;place-items:center}
+.pk{width:58%;max-width:150px;aspect-ratio:3/4;border-radius:12px 12px 16px 16px;background:linear-gradient(180deg,hsl(var(--h) 70% 97%),hsl(var(--h) 60% 88%));border:1px solid hsl(var(--h) 40% 76%);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:24% 8% 10%;color:hsl(var(--h) 60% 22%);position:relative;box-shadow:var(--sh1)}
+.pk::before{content:"";position:absolute;top:0;left:0;right:0;height:13%;background:hsl(var(--h) 55% 38%);border-radius:12px 12px 0 0}
+.pk i{font-style:normal;font-weight:800;font-size:clamp(10px,1.5vw,13px);text-align:center;line-height:1.1}.pk small{font-size:11px;font-weight:700}
+.pb{padding:0 14px 14px;display:flex;flex-direction:column;gap:2px;flex:1}
+.br{color:var(--teal-d);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.sz{color:var(--mut);font-size:13px}
+.pb h3{font-size:15px;font-weight:600;line-height:1.3;min-height:39px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:0}
+.pp{display:flex;align-items:baseline;gap:8px;margin:8px 0 0;min-height:30px}.pp b{font-size:22px;color:var(--navy);font-weight:800;letter-spacing:-.02em}.pp s{color:var(--mut);font-size:13px}
+.eco{font-size:12px;font-weight:700;color:var(--ok);min-height:18px;margin-bottom:10px}
+.add{margin-top:auto;min-height:44px;font-size:14px;padding:0 10px}.add.did{background:var(--green);color:var(--navy)}
+.empty{text-align:center;padding:48px 16px;background:#fff;border-radius:var(--r4);grid-column:1/-1;display:grid;gap:12px;justify-items:center;box-shadow:var(--sh1)}
+.eb{width:112px;height:112px;border-radius:50%;background:var(--ice);color:var(--navy);display:grid;place-items:center;position:relative;margin-bottom:4px}
+.eb::after{content:"";position:absolute;right:6px;top:10px;width:18px;height:18px;border-radius:50%;background:var(--green)}
+.empty p{color:var(--mut);max-width:42ch}.empty .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.empty h2{font-size:22px}
+/* carrinho */
+.pt{font-size:clamp(26px,3.4vw,34px);font-weight:800;margin:28px 0 4px}.ps{color:var(--mut);margin-bottom:20px}
+.two-c{display:grid;gap:24px;padding-bottom:40px}
+@media(min-width:960px){.two-c{grid-template-columns:1.7fr 1fr;align-items:start}}
+.scan{display:flex;align-items:center;gap:14px;width:100%;border:2px dashed var(--teal);background:#fff;color:var(--teal-d);font-weight:700;padding:16px;border-radius:var(--r3);margin-bottom:14px;text-align:left}
+.scan:hover{background:var(--bg)}.scan small{display:block;font-weight:400;color:var(--mut)}
+#items{padding:0;display:grid;gap:12px}
+.ci{list-style:none;display:flex;gap:16px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--r3);padding:12px 18px 12px 12px}
+.ci .th{width:96px;height:96px;flex:none}.ci .in{flex:1;min-width:0;display:grid;gap:2px;font-size:14px}.ci .in b{font-size:16px;font-weight:600;color:var(--navy)}.ci .in small{color:var(--mut)}
+.qt{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.qt output{min-width:28px;text-align:center;font-weight:800}
+.rb{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--teal-d);display:grid;place-items:center}.rb:hover{border-color:var(--teal);background:var(--bg)}
+.lt{color:var(--navy);font-size:18px;font-weight:800;white-space:nowrap}
+.sum{background:#fff;border:1px solid var(--line);border-radius:var(--r4);padding:22px;box-shadow:var(--sh2);position:sticky;top:160px}
+.sum h2{font-size:20px;margin-bottom:12px}
+.sum div.r{display:flex;justify-content:space-between;padding:5px 0;color:var(--mut)}.sum div.r b{color:var(--ink)}.sum .sv,.sum .sv b{color:var(--ok)}
+.sum .tot{border-top:1px solid var(--line);margin-top:10px;padding-top:14px;font-size:26px;font-weight:800;color:var(--navy)}.sum .tot b{color:var(--navy)}
+.sum .st{font-size:13px;color:var(--mut);margin-top:12px;display:flex;gap:8px}
+.cart-empty{background:#fff;border-radius:var(--r4);padding:56px 16px;text-align:center;display:grid;gap:12px;justify-items:center;border:1px solid var(--line);list-style:none}
+.cart-empty p{color:var(--mut)}
+/* formulários */
+.f{margin-top:16px;position:relative}
+.f label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.f input,.f select{width:100%;padding:0 14px;border:1.5px solid #b4cbd4;border-radius:var(--r2);background:#fff;min-height:52px;font-size:16px;transition:border-color .2s,box-shadow .2s}
+.f input:hover{border-color:var(--teal)}
+.f input:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(14,159,181,.18);outline:0}
+.f.ok input:not([type=password]){border-color:var(--green);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314773a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") no-repeat right 14px center/18px}
+.f.ok .pw input{border-color:var(--green)}
+.f input[aria-invalid=true]{border-color:var(--bad);background-color:var(--bad-bg)}
+.msg{display:block;color:var(--bad);font-size:13px;font-weight:600;margin-top:5px}.msg:empty{display:none}
+.pw{position:relative}.pw input{padding-right:96px}
+.eye{position:absolute;right:6px;top:6px;height:40px;border:0;background:var(--bg);color:var(--teal-d);font-weight:700;border-radius:var(--r1);padding:0 12px;font-size:13px}
+.req{list-style:none;padding:0;margin-top:10px;font-size:13px;color:var(--mut);display:flex;flex-wrap:wrap;gap:6px 16px}
+.req li::before{content:"○ "}.req li.y{color:var(--ok);font-weight:700}.req li.y::before{content:"✓ "}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.acts{display:grid;gap:10px;margin-top:22px;justify-items:stretch}.acts .lk{justify-self:center}
+.note{font-size:13px;color:var(--mut);margin:12px 0;text-align:center}
+/* cadastro */
+.auth{min-height:100vh;display:grid}
+.bs{background:var(--navy);color:#fff;padding:28px 24px 32px;display:flex;flex-direction:column;gap:22px;position:relative;overflow:hidden}
+.bs::before{content:"";position:absolute;left:-160px;bottom:-200px;width:520px;height:520px;border-radius:50%;background:var(--teal);opacity:.2}
+.bs>*{position:relative}
+.bs h1{color:#fff;font-size:clamp(32px,4.6vw,54px);font-weight:800;line-height:1.05}.bs h1 span{color:var(--green)}
+.bs p{color:#cfe4ef;max-width:46ch;font-size:17px}
+.scene{position:relative;height:250px;max-width:480px}
+.scene .ht{width:min(40%,170px)}
+.scene .t0{left:0;top:30px}.scene .t1{right:0;top:0}.scene .t2{left:30%;bottom:0}
+.ben{list-style:none;padding:0;display:grid;gap:12px;font-size:15px;color:#e3f1f8}
+.ben li{display:flex;gap:12px;align-items:center}.ben li i{width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--navy);align-items:center;justify-content:center}
+.fs{padding:28px 18px 40px;display:grid;align-content:center;background:var(--bg)}
+.fcard{background:#fff;border:1px solid var(--line);border-radius:var(--r4);padding:clamp(22px,4vw,40px);box-shadow:var(--sh2);width:100%;max-width:500px;margin:0 auto}
+.stp{list-style:none;padding:0;display:flex;gap:8px;margin-bottom:20px;font-size:12px;color:var(--mut)}
+.stp li{flex:1;border-top:4px solid var(--line);padding-top:6px;border-radius:2px}
+.stp li.on{border-color:var(--teal);color:var(--navy);font-weight:700}.stp li.dn{border-color:var(--green)}
+.demo{background:var(--warn-bg);color:var(--warn);border-radius:var(--r2);padding:10px 14px;font-size:13px;margin-bottom:20px}
+.fcard h2{font-size:28px;font-weight:800}.fcard .sub{color:var(--mut);margin-top:4px}
+@media(min-width:960px){.auth{grid-template-columns:1.05fr 1fr}.bs{padding:56px 64px;justify-content:center}.fs{padding:48px}.scene{height:300px}}
+/* concluída, conta */
+.done{max-width:640px;margin:0 auto;padding:48px 20px;text-align:center}
+.chk{width:100px;height:100px;margin:0 auto 18px;border-radius:50%;background:var(--green);display:grid;place-items:center;box-shadow:0 0 0 14px rgba(34,197,94,.2);animation:pop .5s}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.chk path{stroke:var(--navy);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:50;animation:draw .6s .3s both}
+@keyframes draw{from{stroke-dashoffset:50}to{stroke-dashoffset:0}}
+.done h1{font-size:clamp(28px,4vw,38px);font-weight:800}
+.rc{background:#fff;border:1px solid var(--line);border-radius:var(--r3);padding:20px;margin:24px 0 12px;text-align:left;box-shadow:var(--sh1)}
+.rc div{display:flex;justify-content:space-between;gap:12px;padding:6px 0}.rc .tt{border-top:1px dashed var(--line);margin-top:8px;padding-top:12px;font-weight:800;font-size:18px;color:var(--navy)}
+.done .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.acc-g{display:grid;gap:20px;padding-bottom:40px}@media(min-width:900px){.acc-g{grid-template-columns:1.2fr 1fr;align-items:start}}
+.box{background:#fff;border:1px solid var(--line);border-radius:var(--r3);padding:22px;display:grid;gap:12px;box-shadow:var(--sh1)}
+.box h2{font-size:18px}.box small{color:var(--mut)}
+.ph2{display:flex;gap:16px;align-items:center}.av{width:68px;height:68px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:800}
+.pill{display:inline-block;justify-self:start;background:var(--ice);color:var(--navy);font-weight:700;font-size:13px;padding:4px 12px;border-radius:99px}.pill.g{background:var(--ok-bg);color:var(--ok)}
+/* rodapé, aviso, diálogo */
+.ft{background:var(--navy);color:#b9cde0;margin-top:56px;padding:32px 0;font-size:14px}.ft .wrap{display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:space-between;align-items:center}
+#toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:var(--r2);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;max-width:92%;text-align:center;z-index:60;box-shadow:var(--sh3);border-left:4px solid var(--green)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(min-width:800px){#toast{bottom:28px}}
+dialog{border:0;border-radius:var(--r4);padding:28px;max-width:430px;width:calc(100% - 32px);box-shadow:var(--sh3);margin:auto}
+dialog::backdrop{background:rgba(15,36,71,.55)}
+dialog h2{font-size:22px}dialog p{color:var(--mut);margin:8px 0 22px}
+.dact{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}.beam{left:50%}.chk path{stroke-dasharray:0}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="hd" id="hd" hidden>
+  <div class="top"><div class="wrap"><span>Projeto demonstrativo · preços fictícios · nenhuma cobrança real</span><span>Compra sem fila</span></div></div>
+  <div class="wrap mh">
+    <button class="logo" data-a="clr" aria-label="AutoMarket – página inicial"><span class="lm"><i data-ic="cart" data-s="22"></i></span><span>Auto<em>Market</em></span></button>
+    <div class="sbx">
+      <form class="sb" id="sf" role="search"><label for="q" class="vh">Buscar produtos</label>
+        <i data-ic="search"></i><input id="q" type="search" placeholder="Busque por produto, marca ou categoria" autocomplete="off" enterkeyhint="search">
+        <button type="button" class="lk" data-a="clq" id="clq" hidden aria-label="Limpar busca">Limpar</button>
+        <button class="btn" type="submit"><i data-ic="search" data-s="18"></i><span>Buscar</span></button></form>
+      <ul class="sg" id="sg" hidden></ul>
+    </div>
+    <div class="hc">
+      <button class="hb" data-a="go" data-v="acct" data-nav data-nm="acct"><i data-ic="user" data-s="26"></i><span><small>Olá,</small><b id="hn">cliente</b></span></button>
+      <button class="hb cartb" data-a="go" data-v="cart" data-nav aria-label="Carrinho"><i data-ic="cart" data-s="28"></i><b class="bdg" hidden>0</b><span><small>Carrinho</small><b id="hct">R$ 0,00</b></span></button>
+    </div>
+  </div>
+  <nav class="cn" aria-label="Categorias"><div class="wrap" id="catnav"></div></nav>
+</header>
+
+<main id="main">
+<!-- Cadastro / login / pagamento -->
+<section id="auth" class="screen auth" hidden>
+  <aside class="bs">
+    <div class="logo"><span class="lm"><i data-ic="cart" data-s="22"></i></span><span>Auto<em>Market</em></span></div>
+    <div><h1>Entre, pegue e <span>saia.</span> Sem fila.</h1>
+    <p style="margin-top:14px">Monte o carrinho em segundos e finalize em um toque. Esta é uma demonstração: explore à vontade.</p></div>
+    <div class="scene" id="scene" aria-hidden="true"></div>
+    <ul class="ben"><li><i data-ic="check" data-s="16"></i>Conheça os produtos antes de informar qualquer pagamento</li><li><i data-ic="check" data-s="16"></i>Carrinho virtual que soma tudo na hora</li><li><i data-ic="check" data-s="16"></i>Escaneamento simulado para ver a ideia funcionando</li></ul>
+  </aside>
+  <div class="fs"><div class="fcard">
+    <ol class="stp" id="stp" aria-label="Etapas do cadastro"><li>1. Criar conta</li><li>2. Pagamento (opcional)</li><li>3. Explorar</li></ol>
+    <div class="demo"><b>Projeto demonstrativo.</b> Não há servidor, login real nem cobrança. Não use dados pessoais ou financeiros reais.</div>
+
+    <form id="p1" novalidate>
+      <h2 id="t1">Criar sua conta</h2><p class="sub" id="s1">Leva menos de um minuto.</p>
+      <div class="f" id="fn"><label for="nome">Nome completo</label><input id="nome" data-k="nome" autocomplete="name" aria-describedby="e-nome"><span class="msg" id="e-nome"></span></div>
+      <div class="f"><label for="mail">E-mail</label><input id="mail" data-k="mail" type="email" autocomplete="email" aria-describedby="e-mail"><span class="msg" id="e-mail"></span></div>
+      <div class="f"><label for="pass">Senha</label><div class="pw"><input id="pass" data-k="pass" type="password" autocomplete="new-password" aria-describedby="e-pass reqs"><button type="button" class="eye" data-a="eye" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button></div><span class="msg" id="e-pass"></span>
+        <ul class="req" id="reqs"><li data-r="len">8+ caracteres</li><li data-r="let">Uma letra</li><li data-r="num">Um número</li></ul></div>
+      <div class="acts"><button class="btn pri" type="submit" id="b1">Criar conta e continuar</button>
+      <button class="lk" type="button" data-a="login" id="tg">Já tenho conta? Entrar (demonstração)</button></div>
+      <p class="note" id="ln" hidden>Entrada demonstrativa: nenhuma senha é verificada ou salva.</p>
+    </form>
+
+    <form id="p2" novalidate hidden>
+      <h2 id="t2">Pagamento (opcional)</h2><p class="sub">Só será necessário para finalizar uma compra. Use um cartão de teste: 4111 1111 1111 1111. Apenas a bandeira e os 4 últimos dígitos ficam neste aparelho.</p>
+      <div class="f"><label for="num">Número do cartão</label><input id="num" data-k="num" inputmode="numeric" autocomplete="off" placeholder="0000 0000 0000 0000" aria-describedby="e-num"><span class="msg" id="e-num"></span></div>
+      <div class="f"><label for="cn">Nome no cartão</label><input id="cn" data-k="cn" autocomplete="off" aria-describedby="e-cn"><span class="msg" id="e-cn"></span></div>
+      <div class="two"><div class="f"><label for="val">Validade</label><input id="val" data-k="val" inputmode="numeric" placeholder="MM/AA" autocomplete="off" aria-describedby="e-val"><span class="msg" id="e-val"></span></div>
+      <div class="f"><label for="cvv">CVV</label><input id="cvv" data-k="cvv" inputmode="numeric" type="password" maxlength="4" autocomplete="off" aria-describedby="e-cvv"><span class="msg" id="e-cvv"></span></div></div>
+      <div class="acts"><button class="btn pri" type="submit" id="b2">Salvar cartão de teste</button>
+      <button class="btn sec" type="button" data-a="skip" id="sk">Explorar sem cartão</button>
+      <button class="lk" type="button" data-a="back">Voltar</button></div>
+    </form>
+  </div></div>
+</section>
+
+<!-- Início / busca / categorias -->
+<section id="home" class="screen" hidden><div class="wrap">
+  <div id="landing">
+    <div class="hero">
+      <div><span class="eyebrow"><i data-ic="scan" data-s="16"></i><span id="wel">Olá!</span></span>
+        <h1>Entre, pegue e <span>saia.</span> Sem fila.</h1>
+        <p>Monte seu carrinho em segundos, compare preços com clareza e finalize a compra em um toque.</p>
+        <div class="cta"><button class="btn pri" data-a="offers"><i data-ic="tag"></i>Ver ofertas do dia</button><button class="btn ghost" data-a="cats">Explorar categorias</button></div></div>
+      <div class="hv" id="hv" aria-hidden="true"></div>
+    </div>
+    <div class="trust">
+      <div class="tr"><i data-ic="scan" data-s="24"></i><div><b>Compra sem fila</b><span>Escaneamento simulado para ver a ideia funcionando.</span></div></div>
+      <div class="tr"><i data-ic="tag" data-s="24"></i><div><b>Desconto só quando existe</b><span>O preço anterior aparece apenas nos produtos em oferta.</span></div></div>
+      <div class="tr"><i data-ic="shield" data-s="24"></i><div><b>Pagamento de teste</b><span>Sem cobrança real. Senha e CVV nunca são salvos.</span></div></div>
+    </div>
+    <div class="sec-h" id="offsec"><div><h2>Ofertas em destaque</h2><p>Produtos com preço reduzido hoje.</p></div><button class="lk" data-a="offers">Ver todas</button></div>
+    <div class="grid" id="offl"></div>
+    <div class="sec-h"><div><h2>Compre por categoria</h2><p>Encontre o que precisa em poucos toques.</p></div></div>
+    <div class="ctg" id="ctg"></div>
+    <div class="sec-h"><div><h2>Catálogo completo</h2><p>Todos os produtos disponíveis.</p></div></div>
+  </div>
+  <div id="resh"><p class="crumb" id="crumb"></p><h1 class="rt" id="rt">Resultados</h1></div>
+  <div class="tb">
+    <div><label for="brand">Marca</label><select id="brand" data-s="brand"></select></div>
+    <div><label for="max">Preço</label><select id="max" data-s="max"><option value="0">Qualquer preço</option><option value="5">Até R$ 5</option><option value="10">Até R$ 10</option><option value="20">Até R$ 20</option></select></div>
+    <div><label for="sort">Ordenar por</label><select id="sort" data-s="sort"><option value="rel">Relevância</option><option value="asc">Menor preço</option><option value="desc">Maior preço</option><option value="az">Ordem alfabética</option></select></div>
+  </div>
+  <div class="rec" id="rec" hidden></div>
+  <div class="act" id="act"></div>
+  <p class="cnt" id="cnt" role="status" aria-live="polite"></p>
+  <div class="grid" id="list"></div>
+</div></section>
+
+<!-- Carrinho -->
+<section id="cart" class="screen" hidden><div class="wrap">
+  <h1 class="pt">Carrinho inteligente</h1><p class="ps">Revise seus itens antes de finalizar.</p>
+  <div class="two-c">
+  <div>
+    <button class="scan" data-a="scan"><i data-ic="scan" data-s="28"></i><span>Simular escaneamento<small>Demonstração: sorteia um produto do catálogo e coloca no carrinho.</small></span></button>
+    <ul id="items"></ul>
+    <div style="display:flex;justify-content:space-between;margin-top:8px"><button class="lk" data-a="go" data-v="home">← Continuar comprando</button><button class="lk danger" data-a="empty" id="emp">Esvaziar carrinho</button></div>
+  </div>
+  <aside class="sum" aria-label="Resumo da compra"><h2>Resumo do pedido</h2>
+    <div class="r"><span>Itens</span><b id="n">0</b></div>
+    <div class="r sv" id="svr" hidden><span>Você economiza</span><b id="sv"></b></div>
+    <div class="r tot"><span>Total</span><b id="tot">R$ 0,00</b></div>
+    <button class="btn pri block" id="fin" data-a="fin" style="margin-top:16px;min-height:54px">Finalizar compra</button>
+    <p class="st"><i data-ic="shield" data-s="18"></i><span id="pst"></span></p>
+  </aside></div>
+</div></section>
+
+<!-- Compra concluída -->
+<section id="done" class="screen" hidden><div class="done">
+  <div class="chk"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path d="M12 25l8 8 16-18"/></svg></div>
+  <h1>Compra concluída sem fila</h1><p class="note" id="dm"></p>
+  <div class="rc" id="rc"></div>
+  <p class="note">Simulação: nenhuma cobrança real foi feita.</p>
+  <div class="cta"><button class="btn pri" data-a="go" data-v="home">Começar nova compra</button><button class="btn sec" data-a="go" data-v="acct">Minha conta</button></div>
+</div></section>
+
+<!-- Minha conta -->
+<section id="acct" class="screen" hidden><div class="wrap">
+  <h1 class="pt">Minha conta</h1><p class="ps">Gerencie seus dados e o pagamento de teste.</p>
+  <div class="acc-g">
+  <div class="box"><div class="ph2"><div class="av" id="av" aria-hidden="true"></div><div><b id="an" style="font-size:18px"></b><br><small id="ae"></small></div></div>
+    <button class="btn sec" data-a="edit" id="be"><i data-ic="edit" data-s="18"></i>Editar dados</button>
+    <form id="fe" novalidate hidden>
+      <div class="f"><label for="enome">Nome completo</label><input id="enome" data-k="nome" aria-describedby="e-enome"><span class="msg" id="e-enome"></span></div>
+      <div class="f"><label for="email">E-mail</label><input id="email" data-k="mail" type="email" aria-describedby="e-email"><span class="msg" id="e-email"></span></div>
+      <div class="acts"><button class="btn pri" type="submit">Salvar alterações</button><button class="lk" type="button" data-a="edit">Cancelar</button></div></form></div>
+  <div style="display:grid;gap:20px">
+    <div class="box"><h2>Pagamento (teste)</h2><span id="ac"></span><small>Simulação: nenhuma cobrança real é feita.</small>
+      <button class="btn sec" data-a="card" id="bc"></button><button class="btn sec danger" data-a="rmc" id="rm">Remover cartão</button></div>
+    <div class="box"><h2>Atalhos</h2><button class="btn sec" data-a="go" data-v="cart"><i data-ic="cart" data-s="18"></i>Ver carrinho</button>
+      <button class="btn sec" data-a="out"><i data-ic="logout" data-s="18"></i>Sair da conta</button></div>
+  </div></div>
+</div></section>
+</main>
+
+<footer class="ft" id="ft" hidden><div class="wrap"><div class="logo"><span class="lm"><i data-ic="cart" data-s="22"></i></span><span>Auto<em>Market</em></span></div><span>Projeto demonstrativo. Preços fictícios e sem cobrança real.</span></div></footer>
+<nav id="nav" aria-label="Principal" hidden>
+  <button data-a="go" data-v="home" data-nav><i data-ic="home" data-s="22"></i><span>Mercado</span></button>
+  <button data-a="go" data-v="cart" data-nav><i data-ic="cart" data-s="22"></i><span>Carrinho</span><b class="bdg" hidden>0</b></button>
+  <button data-a="go" data-v="acct" data-nav><i data-ic="user" data-s="22"></i><span>Conta</span></button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="dlg" aria-labelledby="dt"><form method="dialog"><h2 id="dt"></h2><p id="dm2"></p><div class="dact"><button class="btn sec" value="cancel">Cancelar</button><button class="btn pri" value="ok" id="dok">Confirmar</button></div></form></dialog>
+
+<script>
+/* ===== Catálogo =====
+   Linha: [id, nome, marca, categoria, tamanho, preço, preço anterior (0 = sem oferta), emoji (legado), URL da imagem (opcional)]
+   Imagem: se a URL estiver preenchida, ela tem prioridade. Caso contrário, o app tenta buscar a embalagem real
+   no Open Food Facts (base aberta) e guarda em cache. Se nada for encontrado, mostra uma embalagem ilustrada. Preços fictícios. */
+function norm(s){return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+const CATS=[["Hortifruti","leaf",140],["Bebidas","cup",200],["Laticínios","milk",215],["Mercearia","bag",35],["Biscoitos e doces","cookie",25],["Padaria","bread",30],["Caldinho","bowl",15],["Limpeza","spray",190]];
+const P=[
+[1,"Banana Prata","Hortifruti","Hortifruti","1 kg",3.99,4.99,"🍌"],
+[2,"Leite Integral","Piracanjuba","Laticínios","1 L",4.5,5.2,"🥛"],
+[3,"Pão Artesanal","Padaria da Casa","Padaria","400 g",7.99,9.5,"🍞"],
+[4,"Suco de Laranja","Del Valle","Bebidas","500 ml",5.5,0,"🧃"],
+[5,"Maçã Fuji","Hortifruti","Hortifruti","1 kg",6.49,0,"🍎"],
+[6,"Tomate","Hortifruti","Hortifruti","1 kg",5.99,0,"🍅"],
+[7,"Queijo Mussarela Fatiado","Italac","Laticínios","200 g",9.9,0,"🧀"],
+[8,"Iogurte Natural","Nestlé","Laticínios","170 g",2.79,0,"🥣"],
+[9,"Croissant","Padaria da Casa","Padaria","unidade",4.5,0,"🥐"],
+[10,"Caldinho de Feijão","AutoMarket","Caldinho","300 ml",5.9,0,"🍲"],
+[11,"Caldinho de Mandioca","AutoMarket","Caldinho","300 ml",6.5,0,"🥣"],
+[12,"Água Mineral","Crystal","Bebidas","1,5 L",3.2,0,"💧"],
+[13,"Refrigerante Original","Coca-Cola","Bebidas","2 L",8.9,0,"🥤"],
+[14,"Refrigerante Laranja","Fanta","Bebidas","2 L",8.49,0,"🥤"],
+[15,"Refrigerante Guaraná","Antarctica","Bebidas","2 L",7.99,8.99,"🥤"],
+[16,"Leite em Pó Integral","Ninho","Laticínios","380 g",21.9,0,"🥛"],
+[17,"Achocolatado em Pó","Nescau","Mercearia","370 g",9.49,0,"🍫"],
+[18,"Arroz Branco","Tio João","Mercearia","5 kg",28.9,0,"🍚"],
+[19,"Feijão Carioca","Camil","Mercearia","1 kg",7.99,0,"🫘"],
+[20,"Açúcar Refinado","União","Mercearia","1 kg",4.99,0,"🧂"],
+[21,"Macarrão Espaguete","Renata","Mercearia","500 g",4.79,0,"🍝"],
+[22,"Fubá de Milho","Yoki","Mercearia","500 g",3.99,0,"🌽"],
+[23,"Torradas Tradicionais","Bauducco","Padaria","142 g",4.99,0,"🍞"],
+[24,"Biscoito Recheado","Oreo","Biscoitos e doces","90 g",3.99,0,"🍪"],
+[25,"Biscoito Recheado Morango","Trakinas","Biscoitos e doces","126 g",2.99,0,"🍪"],
+[26,"Chocolate ao Leite","Lacta","Biscoitos e doces","80 g",5.49,6.49,"🍫"],
+[27,"Multiuso Original","Veja","Limpeza","500 ml",7.99,0,"🧴"],
+[28,"Lava-Roupas Líquido","OMO","Limpeza","1,5 L",24.9,0,"🧺"],
+[29,"Detergente Neutro","Ypê","Limpeza","500 ml",2.69,0,"🧼"]
+].map(([id,n,b,c,t,p,o,e,i])=>({id,n,b,c,t,p,o,e,i:i||"",k:norm([n,b,c,t].join(" "))}));
+const byId=id=>P.find(p=>p.id==id);
+
+/* ===== Ícones (SVG de traço, 24px) ===== */
+const IC={search:"M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4",cart:"M3 4h2l2.5 11h10l2-8H6.5M9 20h.01M17 20h.01",user:"M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 4-6 8-6s8 2 8 6",home:"M4 11l8-7 8 7v9h-5v-6H9v6H4z",plus:"M12 5v14M5 12h14",minus:"M5 12h14",check:"M5 12l5 5 9-10",x:"M6 6l12 12M18 6L6 18",tag:"M3 12V4h8l10 10-8 8zM7.5 8h.01",scan:"M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",logout:"M10 4H5v16h5M15 8l4 4-4 4M19 12H9",edit:"M4 20h4L19 9l-4-4L4 16zM13 7l4 4",grid:"M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+leaf:"M5 19c0-8 5-14 14-14 0 9-6 14-14 14zM5 19c3-5 6-8 10-10",cup:"M6 4h12l-1.5 16h-9zM7 9h10",milk:"M9 3h6v4l2 3v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V10l2-3zM7 13h10",bag:"M6 8h12l1 12H5zM9 8a3 3 0 0 1 6 0M9 13h6",cookie:"M12 3a9 9 0 1 0 9 9 4 4 0 0 1-4-4 4 4 0 0 1-5-5zM9 11h.01M14 15h.01M9 16h.01",bread:"M4 11a4 4 0 0 1 3-6h10a4 4 0 0 1 3 6v8H4zM8 11v4M12 11v4M16 11v4",bowl:"M3 11h18a9 9 0 0 1-18 0zM8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4",spray:"M8 10h6v11H8zM9 10V6h4l2-2h3M11 6V4"};
+const ic=(n,s=20)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${IC[n]}"/></svg>`;
+document.querySelectorAll("[data-ic]").forEach(e=>e.innerHTML=ic(e.dataset.ic,+e.dataset.s||20));
+
+/* ===== Utilidades e estado ===== */
+const $=s=>document.querySelector(s),KEY="automarket",IMG="automarket_img";
+const R=v=>"R$ "+v.toFixed(2).replace(".",",");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const S={user:null,card:null,cart:{},hist:[],img:{},cat:"",brand:"",max:0,offer:false,sort:"rel",q:"",after:null,flow:true,login:false,last:null,ready:false,screen:""};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"{}");
+  if(s.user&&typeof s.user.nome==="string"&&typeof s.user.email==="string")S.user={nome:s.user.nome.slice(0,60),email:s.user.email.slice(0,80)};
+  if(s.card&&/^\d{4}$/.test(s.card.last4))S.card={last4:s.card.last4,brand:String(s.card.brand).slice(0,12)};
+  if(s.cart)for(const[k,v]of Object.entries(s.cart))if(byId(k)&&v>0)S.cart[k]=Math.min(99,v|0);
+  if(Array.isArray(s.hist))S.hist=s.hist.filter(x=>typeof x==="string").slice(0,5);
+}catch(e){}
+try{const m=JSON.parse(localStorage.getItem(IMG)||"{}");for(const[k,v]of Object.entries(m))if(byId(k)&&/^https:\/\//.test(v))S.img[k]=v}catch(e){}
+/* Só guarda dados não sensíveis: nome, e-mail, bandeira + 4 últimos dígitos, carrinho e buscas recentes. Senha e CVV nunca. */
+function save(){try{localStorage.setItem(KEY,JSON.stringify({user:S.user,card:S.card,cart:S.cart,hist:S.hist}))}catch(e){}}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600)}
+const count=()=>Object.values(S.cart).reduce((a,b)=>a+b,0);
+const total=()=>Object.entries(S.cart).reduce((a,[id,q])=>a+Math.round(byId(id).p*100)*q,0)/100;
+function badge(bump){const n=count();
+  document.querySelectorAll(".bdg").forEach(b=>{b.textContent=n;b.hidden=!n;if(bump){b.classList.remove("bump");void b.offsetWidth;b.classList.add("bump")}});
+  $("#hct").textContent=R(total());
+  document.querySelectorAll(".pc").forEach(c=>{const q=S.cart[c.dataset.id]||0,e=c.querySelector(".inc");e.hidden=!q;e.textContent=q+" no carrinho"});
+}
+const cardTxt=()=>S.card?S.card.brand+" •••• "+S.card.last4:"Nenhum cartão configurado";
+function ask(t,m,ok){return new Promise(res=>{const d=$("#dlg");$("#dt").textContent=t;$("#dm2").textContent=m;$("#dok").textContent=ok||"Confirmar";d.returnValue="";d.onclose=()=>res(d.returnValue==="ok");d.showModal()})}
+function busy(b,fn){b.classList.add("ld");b.disabled=true;setTimeout(()=>{b.classList.remove("ld");b.disabled=false;fn()},RM?0:650)}
+
+/* ===== Navegação ===== */
+function go(id,pop){
+  if(!S.user)id="auth";
+  if(id==="done"&&!S.last)id="home";
+  S.screen=id;const au=id==="auth";
+  document.querySelectorAll(".screen").forEach(x=>x.hidden=x.id!==id);
+  $("#hd").hidden=au;$("#ft").hidden=au;$("#nav").hidden=au;document.body.classList.toggle("noav",au);
+  document.querySelectorAll("[data-nav]").forEach(b=>{const on=b.dataset.v===id;b.classList.toggle("on",on);on?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current")});
+  if(S.user)$("#hn").textContent=S.user.nome.split(" ")[0]||"cliente";
+  if(!au)$("#pass").value="";
+  if(au)pane(1);
+  if(id==="home")renderHome();if(id==="cart")renderCart();if(id==="acct")renderAcct();if(id==="done")renderDone();
+  if(!pop)history.pushState({id},"");
+  scrollTo(0,0);
+  if(S.ready&&document.activeElement!==$("#q")){const h=$("#"+id+" h1");if(h&&h.offsetParent){h.tabIndex=-1;h.focus({preventScroll:true})}}
+}
+onpopstate=e=>go(e.state&&e.state.id||"home",true);
+const refresh=()=>S.screen==="home"?renderList():go("home");
+
+/* ===== Cadastro / pagamento ===== */
+function pane(n){
+  $("#p1").hidden=n!==1;$("#p2").hidden=n!==2;$("#stp").hidden=!S.flow;
+  [...$("#stp").children].forEach((li,i)=>{li.classList.toggle("on",i+1===n);li.classList.toggle("dn",i+1<n);i+1===n?li.setAttribute("aria-current","step"):li.removeAttribute("aria-current")});
+  $("#sk").textContent=S.after?"Agora não":"Explorar sem cartão";
+  if(n===2)($("#t2").tabIndex=-1,$("#t2").focus({preventScroll:true}));
+}
+const passOk=v=>v.length>=8&&/[a-z]/i.test(v)&&/\d/.test(v);
+function luhn(d){if(d.length<13||d.length>19)return false;let s=0;for(let i=0;i<d.length;i++){let x=+d[d.length-1-i];if(i%2){x*=2;if(x>9)x-=9}s+=x}return s%10===0}
+const V={
+  nome:v=>v.trim().length<2?"Digite seu nome completo.":"",
+  mail:v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?"":"Digite um e-mail válido, como nome@exemplo.com.",
+  pass:v=>passOk(v)?"":"Crie uma senha com 8 caracteres, uma letra e um número.",
+  passL:v=>v?"":"Digite uma senha para entrar na demonstração.",
+  num:v=>luhn(v.replace(/\D/g,""))?"":"Número inválido. Para testar, use 4111 1111 1111 1111.",
+  cn:v=>v.trim().length<2?"Digite o nome impresso no cartão.":"",
+  val:v=>{const m=+v.slice(0,2),y=2000+ +v.slice(3,5),n=new Date();return /^\d\d\/\d\d$/.test(v)&&m>=1&&m<=12&&(y>n.getFullYear()||y===n.getFullYear()&&m>=n.getMonth()+1)?"":"Informe uma validade futura no formato MM/AA."},
+  cvv:v=>/^\d{3,4}$/.test(v)?"":"O CVV tem 3 ou 4 números."
+};
+function check(id,k){
+  const el=$("#"+id);k=k||el.dataset.k;if(k==="pass"&&S.login)k="passL";
+  const m=V[k](el.value);$("#e-"+id).textContent=m;el.setAttribute("aria-invalid",!!m);
+  el.closest(".f").classList.toggle("ok",!m&&el.value!=="");return!m;
+}
+function firstBad(ids){const bad=ids.filter(i=>!check(i));if(bad.length){$("#"+bad[0]).focus();return true}return false}
+function reqs(){const v=$("#pass").value;[["len",v.length>=8],["let",/[a-z]/i.test(v)],["num",/\d/.test(v)]].forEach(([k,ok])=>$("[data-r="+k+"]").classList.toggle("y",ok))}
+
+$("#p1").onsubmit=e=>{e.preventDefault();
+  if(firstBad(S.login?["mail","pass"]:["nome","mail","pass"]))return;
+  const mail=$("#mail").value.trim(),nome=$("#nome").value.trim();
+  busy($("#b1"),()=>{
+    S.user={nome:S.login?mail.split("@")[0]:nome,email:mail};save();
+    if(S.login){toast("Entrada demonstrativa realizada");return go("home")}
+    S.flow=true;S.after=null;pane(2);
+  });
+};
+$("#p2").onsubmit=e=>{e.preventDefault();
+  if(firstBad(["num","cn","val","cvv"]))return;
+  const n=$("#num").value.replace(/\D/g,"");
+  busy($("#b2"),()=>{
+    S.card={last4:n.slice(-4),brand:n[0]==="4"?"Visa":/^[25]/.test(n)?"Mastercard":"Cartão"};
+    save();toast("Cartão de teste configurado");resetPay();
+    const nx=S.after||"home";S.after=null;go(nx);
+  });
+};
+function resetPay(){$("#p2").reset();document.querySelectorAll("#p2 .f").forEach(f=>f.classList.remove("ok"));document.querySelectorAll("#p2 .msg").forEach(m=>m.textContent="")}
+function openPay(after){S.after=after;S.flow=false;go("auth");pane(2)}
+
+/* ===== Imagens dos produtos ===== */
+const fb=p=>{const c=CATS.find(c=>c[0]===p.c)||["","bag",200];return `<div class="fb" style="--h:${c[2]}"><div class="pk"><i>${esc(p.b)}</i>${ic(c[1],34)}<small>${esc(p.t)}</small></div></div>`};
+const art=p=>{const u=p.i||S.img[p.id];return u?`<img class="pi" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(u)}" alt="${esc(p.b+" "+p.n)}" data-id="${p.id}">`:fb(p)};
+const pic=p=>`<div class="art" data-p="${p.id}">${art(p)}</div>`;
+document.addEventListener("error",e=>{const i=e.target;if(i.tagName==="IMG"&&i.classList.contains("pi")){delete S.img[i.dataset.id];i.outerHTML=fb(byId(i.dataset.id))}},true);
+/* Busca a embalagem real no Open Food Facts (só produtos de marca) e guarda o link em cache. */
+async function photos(){
+  const skip=["Hortifruti","AutoMarket","Padaria da Casa"],stop=["refrigerante","biscoito","em","de","do","da","po","ao"];
+  for(const p of P){
+    if(p.i||S.img[p.id]||skip.includes(p.b))continue;
+    try{
+      const r=await fetch("https://world.openfoodfacts.org/cgi/search.pl?json=1&page_size=8&fields=brands,product_name,image_front_url&search_terms="+encodeURIComponent(p.b+" "+p.n));
+      const j=await r.json(),bn=norm(p.b),tk=norm(p.n).split(" ").filter(w=>w.length>1&&!stop.includes(w));
+      const h=(j.products||[]).find(x=>x.image_front_url&&/^https:\/\//.test(x.image_front_url)&&norm(x.brands||"").includes(bn)&&tk.every(w=>norm(x.product_name||"").includes(w)));
+      if(h){S.img[p.id]=h.image_front_url;try{localStorage.setItem(IMG,JSON.stringify(S.img))}catch(e){}
+        document.querySelectorAll('.art[data-p="'+p.id+'"]').forEach(a=>a.innerHTML=art(p))}
+    }catch(e){return}
+  }
+}
+
+/* ===== Busca e catálogo ===== */
+const SG=[...new Set(P.flatMap(p=>[p.b+" "+p.n,p.b,p.c]))];
+function filtered(){
+  const t=norm(S.q).split(" ").filter(Boolean);
+  const l=P.filter(p=>(!S.cat||p.c===S.cat)&&(!S.brand||p.b===S.brand)&&(!S.max||p.p<=S.max)&&(!S.offer||p.o)&&t.every(x=>(" "+p.k).includes(" "+x)));
+  if(S.sort==="asc")l.sort((a,b)=>a.p-b.p);else if(S.sort==="desc")l.sort((a,b)=>b.p-a.p);else if(S.sort==="az")l.sort((a,b)=>(a.b+a.n).localeCompare(b.b+b.n,"pt"));
+  return l;
+}
+function sugg(){
+  const q=norm($("#q").value),t=q.split(" ").filter(Boolean);
+  const l=t.length?SG.filter(x=>{const n=" "+norm(x);return t.every(w=>n.includes(" "+w))&&norm(x)!==q}).slice(0,6):[];
+  $("#sg").innerHTML=l.map(x=>`<li><button type="button" data-a="sug" data-v="${esc(x)}">${ic("search",16)}${esc(x)}</button></li>`).join("");$("#sg").hidden=!l.length;
+}
+function pushHist(q){q=q.trim();if(q.length<2)return;S.hist=[q,...S.hist.filter(x=>norm(x)!==norm(q))].slice(0,5);save();renderRec()}
+function renderRec(){const r=$("#rec");r.hidden=!S.hist.length||!!S.q;
+  r.innerHTML=S.hist.length?"Buscas recentes: "+S.hist.map(h=>`<button class="ch" data-a="sug" data-v="${esc(h)}">${esc(h)}</button>`).join("")+`<button class="lk" data-a="clh">Limpar histórico</button>`:""}
+const card=p=>`<article class="pc" data-id="${p.id}"><div class="ph">${p.o?`<span class="tag">-${Math.round((1-p.p/p.o)*100)}%</span>`:""}<span class="inc" hidden></span>${pic(p)}</div><div class="pb"><span class="br">${esc(p.b)}</span><h3>${esc(p.n)}</h3><span class="sz">${esc(p.t)}</span><div class="pp"><b>${R(p.p)}</b>${p.o?`<s>${R(p.o)}</s>`:""}</div><div class="eco">${p.o?"Economize "+R(p.o-p.p):""}</div><button class="btn dk add" data-a="add" data-v="${p.id}" aria-label="Adicionar ${esc(p.b+" "+p.n)} ao carrinho">${ic("plus",18)}Adicionar</button></div></article>`;
+const tile=(id,k)=>{const p=byId(id);return `<div class="ht t${k}">${p.o?`<span class="tag">-${Math.round((1-p.p/p.o)*100)}%</span>`:""}${pic(p)}<b>${esc(p.b)}</b><span class="n">${esc(p.n)}</span><strong>${R(p.p)}</strong></div>`};
+function renderHome(){
+  $("#wel").textContent="Olá, "+(S.user.nome.split(" ")[0]||"cliente")+"! Bem-vindo(a)";
+  $("#offl").innerHTML=P.filter(p=>p.o).map(card).join("");
+  $("#ctg").innerHTML=CATS.map(([n,i,h])=>`<button class="ct" style="--h:${h}" data-a="cat" data-v="${esc(n)}"><span class="ci2">${ic(i,30)}</span><b>${esc(n)}</b><small>${P.filter(p=>p.c===n).length} produtos</small></button>`).join("");
+  $("#hv").innerHTML=`<div class="beam"></div>`+[2,15,26].map(tile).join("");
+  renderList();renderRec();
+}
+function renderList(){
+  const l=filtered(),f=[];
+  if(S.cat)f.push(["cat",S.cat]);if(S.brand)f.push(["brand",S.brand]);if(S.max)f.push(["max","Até "+R(S.max)]);if(S.offer)f.push(["offer","Só ofertas"]);if(S.q.trim())f.push(["q","“"+S.q.trim()+"”"]);
+  const br=f.length>0;$("#landing").hidden=br;$("#resh").hidden=!br;
+  $("#rt").textContent=S.q.trim()?"Resultados para “"+S.q.trim()+"”":S.cat||(S.offer?"Ofertas do dia":"Produtos");
+  $("#crumb").textContent="Início"+(S.cat?" / "+S.cat:"")+(S.q.trim()?" / Busca":"");
+  $("#act").innerHTML=f.map(([k,t])=>`<button class="ch" data-a="rm" data-v="${k}" aria-label="Remover filtro ${esc(t)}">${esc(t)} ${ic("x",14)}</button>`).join("")+(f.length>1?`<button class="lk" data-a="clr">Limpar tudo</button>`:"");
+  $("#catnav").innerHTML=`<button class="cl" data-a="clr" aria-pressed="${!S.cat&&!br}">${ic("grid",18)}Todas as categorias</button>`+CATS.map(([n,i])=>`<button class="cl" data-a="cat" data-v="${esc(n)}" aria-pressed="${S.cat===n}">${esc(n)}</button>`).join("");
+  $("#brand").value=S.brand;$("#max").value=S.max;$("#sort").value=S.sort;
+  $("#cnt").textContent=l.length===1?"1 produto encontrado":l.length+" produtos encontrados";
+  if(l.length){$("#list").innerHTML=l.map(card).join("");return badge()}
+  const t=norm(S.q).split(" ")[0]||"",alt=[...new Set(P.flatMap(p=>[p.b,p.c]))].filter(x=>t.length>2&&norm(x).includes(t.slice(0,3))).slice(0,4);
+  const hint=(alt.length?alt:CATS.slice(0,4).map(c=>c[0]));
+  $("#list").innerHTML=`<div class="empty"><div class="eb" aria-hidden="true">${ic("search",48)}</div><h2>Não encontramos “${esc(S.q.trim()||"esse filtro")}”</h2><p>Confira a escrita ou tente ${alt.length?"termos parecidos":"uma destas categorias"}:</p><div class="row">${hint.map(x=>`<button class="ch" data-a="sug" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div><button class="btn sec" data-a="clr">Limpar busca e filtros</button></div>`;
+}
+function setQ(v){S.q=v;$("#q").value=v;$("#clq").hidden=!v;$("#sg").hidden=true;renderRec();refresh()}
+
+/* ===== Carrinho ===== */
+function add(id,btn){
+  S.cart[id]=Math.min(99,(S.cart[id]||0)+1);save();badge(true);const p=byId(id);
+  if(btn){btn.classList.add("did");btn.innerHTML=ic("check",18)+"Adicionado";clearTimeout(btn._t);btn._t=setTimeout(()=>{btn.classList.remove("did");btn.innerHTML=ic("plus",18)+"Adicionar"},1200)}
+  toast(p.b+" "+p.n+" no carrinho");
+}
+function chg(id,d){S.cart[id]=(S.cart[id]||0)+d;if(S.cart[id]<=0)delete S.cart[id];save();badge();renderCart()}
+function renderCart(){
+  const ids=Object.keys(S.cart);
+  $("#items").innerHTML=ids.length?ids.map(id=>{const p=byId(id),q=S.cart[id];
+    return `<li class="ci"><div class="th">${pic(p)}</div><div class="in"><span class="br">${esc(p.b)}</span><b>${esc(p.n)}</b><small>${esc(p.t)} · ${R(p.p)} cada</small><div class="qt"><button class="rb" data-a="dec" data-v="${id}" aria-label="Diminuir quantidade de ${esc(p.n)}">${ic("minus",16)}</button><output aria-label="Quantidade">${q}</output><button class="rb" data-a="inc" data-v="${id}" aria-label="Aumentar quantidade de ${esc(p.n)}">${ic("plus",16)}</button><button class="lk" data-a="del" data-v="${id}" aria-label="Remover ${esc(p.n)} do carrinho">Remover</button></div></div><b class="lt">${R(p.p*q)}</b></li>`}).join("")
+    :`<li class="cart-empty"><div class="eb" aria-hidden="true">${ic("cart",48)}</div><h2>Seu carrinho está vazio</h2><p>Adicione produtos do mercado ou use o escaneamento simulado.</p><button class="btn pri" data-a="go" data-v="home">Ver produtos</button></li>`;
+  const sv=ids.reduce((a,id)=>{const p=byId(id);return a+(p.o?(p.o-p.p)*S.cart[id]:0)},0);
+  $("#n").textContent=count();$("#tot").textContent=R(total());$("#svr").hidden=sv<=0;$("#sv").textContent=R(sv);
+  $("#fin").disabled=!ids.length;$("#emp").hidden=!ids.length;
+  $("#pst").textContent=S.card?"Pagamento de teste: "+cardTxt()+". Nenhuma cobrança real.":"Para finalizar, será pedido um cartão de teste (simulação).";
+}
+async function checkout(){
+  if(!count())return toast("Adicione ao menos um produto para finalizar.");
+  if(!S.card){toast("Configure um cartão de teste para finalizar.");return openPay("cart")}
+  if(!await ask("Confirmar compra demonstrativa?",count()+" itens · "+R(total())+" no "+cardTxt()+". Nenhuma cobrança real será feita.","Confirmar compra"))return;
+  const b=$("#fin");b.classList.add("ld");b.disabled=true;
+  await new Promise(r=>setTimeout(r,RM?0:800));b.classList.remove("ld");
+  S.last={items:Object.entries(S.cart).map(([id,q])=>({...byId(id),q})),total:total(),when:new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}),card:cardTxt()};
+  S.cart={};save();badge();go("done");
+}
+function renderDone(){const L=S.last,n=L.items.reduce((a,i)=>a+i.q,0);
+  $("#dm").textContent=n+(n===1?" item":" itens")+" · "+L.when+" · "+L.card+" (simulado)";
+  $("#rc").innerHTML=L.items.map(i=>`<div><span>${i.q}× ${esc(i.b)} ${esc(i.n)}</span><span>${R(i.p*i.q)}</span></div>`).join("")+`<div class="tt"><span>Total</span><span>${R(L.total)}</span></div>`}
+
+/* ===== Conta ===== */
+function renderAcct(){
+  $("#av").textContent=(S.user.nome[0]||"A").toUpperCase();$("#an").textContent=S.user.nome;$("#ae").textContent=S.user.email;
+  $("#ac").innerHTML=`<span class="pill${S.card?" g":""}">${esc(cardTxt())}</span>`;
+  $("#bc").textContent=S.card?"Trocar cartão de teste":"Configurar cartão de teste";$("#rm").hidden=!S.card;$("#fe").hidden=true;
+}
+$("#fe").onsubmit=e=>{e.preventDefault();
+  if(firstBad(["enome","email"]))return;
+  S.user={nome:$("#enome").value.trim(),email:$("#email").value.trim()};save();renderAcct();$("#hn").textContent=S.user.nome.split(" ")[0];toast("Dados atualizados");
+};
+function logout(){
+  S.user=null;S.card=null;S.cart={};S.hist=[];S.last=null;S.after=null;S.flow=true;S.login=false;
+  Object.assign(S,{cat:"",brand:"",max:0,offer:false,sort:"rel",q:""});
+  try{localStorage.removeItem(KEY)}catch(e){}
+  $("#q").value="";$("#p1").reset();resetPay();setLogin(false);document.querySelectorAll("#p1 .f").forEach(f=>f.classList.remove("ok"));document.querySelectorAll("#p1 .msg").forEach(m=>m.textContent="");reqs();badge();go("auth");
+}
+function setLogin(on){S.login=on;
+  $("#fn").hidden=on;$("#reqs").hidden=on;$("#ln").hidden=!on;
+  $("#t1").textContent=on?"Entrar (demonstração)":"Criar sua conta";$("#s1").textContent=on?"Use qualquer e-mail e senha para conhecer o mercado.":"Leva menos de um minuto.";
+  $("#b1").textContent=on?"Entrar":"Criar conta e continuar";$("#tg").textContent=on?"Quero criar uma conta":"Já tenho conta? Entrar (demonstração)";
+  $("#pass").autocomplete=on?"current-password":"new-password";
+}
+
+/* ===== Eventos ===== */
+const toTop=()=>scrollTo({top:0,behavior:RM?"auto":"smooth"});
+const A={
+  go:v=>go(v),
+  add:(v,b)=>add(v,b),inc:v=>chg(v,1),dec:v=>chg(v,-1),del:v=>chg(v,-99),
+  empty:async()=>{if(await ask("Esvaziar o carrinho?","Todos os itens serão removidos do carrinho.","Esvaziar")){S.cart={};save();badge();renderCart();toast("Carrinho esvaziado")}},
+  scan:()=>{const p=P[Math.floor(Math.random()*P.length)];S.cart[p.id]=Math.min(99,(S.cart[p.id]||0)+1);save();badge(true);renderCart();toast("Escaneado (simulação): "+p.b+" "+p.n)},
+  fin:checkout,
+  eye:(v,b)=>{const i=$("#pass"),s=i.type==="password";i.type=s?"text":"password";b.textContent=s?"Ocultar":"Mostrar";b.setAttribute("aria-pressed",s);b.setAttribute("aria-label",s?"Ocultar senha":"Mostrar senha")},
+  login:()=>setLogin(!S.login),
+  skip:()=>{const nx=S.after||"home";S.after=null;resetPay();go(nx)},
+  back:()=>{if(S.after){const nx=S.after;S.after=null;go(nx)}else pane(1)},
+  cat:v=>{S.cat=S.cat===v?"":v;refresh();toTop()},
+  sug:v=>{pushHist(v);setQ(v);toTop()},
+  clq:()=>{setQ("");$("#q").focus()},
+  clh:()=>{S.hist=[];save();renderRec()},
+  rm:v=>{if(v==="q")setQ("");else{S[v]=v==="max"?0:v==="offer"?false:"";refresh()}},
+  clr:()=>{Object.assign(S,{cat:"",brand:"",max:0,offer:false});setQ("");toTop()},
+  offers:()=>{S.offer=true;refresh();toTop()},
+  cats:()=>$("#ctg").scrollIntoView({behavior:RM?"auto":"smooth",block:"start"}),
+  edit:()=>{const f=$("#fe");f.hidden=!f.hidden;if(!f.hidden){$("#enome").value=S.user.nome;$("#email").value=S.user.email;$("#enome").focus()}},
+  card:()=>openPay("acct"),
+  rmc:async()=>{if(await ask("Remover o cartão de teste?","Você poderá configurar outro quando quiser.","Remover")){S.card=null;save();renderAcct();toast("Cartão removido")}},
+  out:async()=>{if(await ask("Sair da conta?","Seu carrinho e os dados deste aparelho serão apagados.","Sair"))logout()}
+};
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-a]");
+  if(t&&A[t.dataset.a])return A[t.dataset.a](t.dataset.v,t);
+  if(!e.target.closest(".sbx"))$("#sg").hidden=true;
+});
+document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.s;if(k){S[k]=k==="max"?+e.target.value:e.target.value;refresh()}});
+document.addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.dataset.k){t.dataset.t=1;if(t.value||t.getAttribute("aria-invalid"))check(t.id)}});
+document.addEventListener("input",e=>{
+  const t=e.target,k=t.dataset&&t.dataset.k;
+  if(t.id==="num")t.value=t.value.replace(/\D/g,"").slice(0,19).replace(/(.{4})/g,"$1 ").trim();
+  if(t.id==="val"){let v=t.value.replace(/\D/g,"").slice(0,4);if(v.length>2)v=v.slice(0,2)+"/"+v.slice(2);t.value=v}
+  if(t.id==="cvv")t.value=t.value.replace(/\D/g,"");
+  if(t.id==="pass")reqs();
+  if(k&&t.dataset.t)check(t.id);
+  if(t.id==="q"){S.q=t.value;$("#clq").hidden=!t.value;sugg();renderRec();refresh()}
+});
+$("#q").onchange=()=>pushHist($("#q").value);
+$("#sf").onsubmit=e=>{e.preventDefault();pushHist($("#q").value);$("#sg").hidden=true;$("#q").blur();refresh()};
+$(".sbx").addEventListener("focusout",e=>{if(!e.currentTarget.contains(e.relatedTarget))$("#sg").hidden=true});
+$(".sbx").addEventListener("keydown",e=>{if(e.key==="Escape")$("#sg").hidden=true});
+
+/* ===== Início ===== */
+$("#scene").innerHTML=`<div class="beam"></div>`+[13,2,24].map(tile).join("");
+$("#brand").innerHTML=`<option value="">Todas as marcas</option>`+[...new Set(P.map(p=>p.b))].sort((a,b)=>a.localeCompare(b,"pt")).map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join("");
+badge();go(S.user?"home":"auth",true);history.replaceState({id:S.user?"home":"auth"},"");S.ready=true;
+photos();
+</script>
+</body>
+</html>
